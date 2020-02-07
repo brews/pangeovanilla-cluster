@@ -1,0 +1,79 @@
+resources:
+- name: pangeo-cluster
+  type: container.v1.cluster
+  properties:
+    zone: {{ properties["zone"] }}
+    cluster:
+      name: {{ properties["clustername"] }}
+      resourceLabels:
+        app: pangeo
+        managed-by: deployment-manager
+        env: {{ properties["env"] }}
+      loggingService: logging.googleapis.com/kubernetes
+      monitoringService: monitoring.googleapis.com/kubernetes
+      maintenancePolicy:
+        window:
+          recurringWindow:
+            window:
+              startTime: "2020-01-05T12:00:00Z"
+              endTime: "2020-01-06T12:00:00Z"
+            recurrence: "FREQ=WEEKLY"
+      initialClusterVersion: latest
+      nodePools:
+      - name: core-pool
+        config:
+          machineType: n1-standard-2
+          diskSizeGb: 10
+          oauthScopes:
+          - https://www.googleapis.com/auth/devstorage.read_write
+          - https://www.googleapis.com/auth/logging.write
+          - https://www.googleapis.com/auth/monitoring
+          - https://www.googleapis.com/auth/service.management.readonly
+          - https://www.googleapis.com/auth/servicecontrol
+          - https://www.googleapis.com/auth/trace.append
+        initialNodeCount: 3
+        autoscaling: 
+          enabled: true
+          minNodeCount: 1
+          maxNodeCount: 100
+        management:
+          autoUpgrade: true
+          autoRepair: true
+      - name: worker-pool
+        config:
+          machineType: n1-highmem-8
+          diskSizeGb: 10
+          oauthScopes:
+          - https://www.googleapis.com/auth/devstorage.read_write
+          - https://www.googleapis.com/auth/logging.write
+          - https://www.googleapis.com/auth/monitoring
+          - https://www.googleapis.com/auth/service.management.readonly
+          - https://www.googleapis.com/auth/servicecontrol
+          - https://www.googleapis.com/auth/trace.append
+          labels: 
+            preemptible: "true"
+            dedicated: worker
+            managed-by: deployment-manager
+          preemptible: true
+          taints:
+          - key: k8s.dask.org/dedicated
+            value: worker
+            effect: NO_SCHEDULE
+          - key: k8s.dask.org_dedicated
+            value: worker
+            effect: NO_SCHEDULE
+        initialNodeCount: 0
+        autoscaling: 
+          enabled: true
+          minNodeCount: 0
+          maxNodeCount: 1000
+        management:
+          autoUpgrade: true
+          autoRepair: true
+
+- name: pangeo-jhubip-address
+  type: compute.v1.address
+  properties:
+    name: pangeo-jhubip-address
+    description: Reserved static external IP for Pangeo's Jupyterhub load balancer. Managed by deployment-manager.
+    region:  {{ properties["region"] }}

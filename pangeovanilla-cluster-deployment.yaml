@@ -1,0 +1,12 @@
+imports:
+- path: templates/cluster-template.jinja
+  name: cluster-template.jinja
+
+resources:
+- name: pangeovanilla-cluster-deployment
+  type: cluster-template.jinja
+  properties:
+    clustername: methone
+    env: dev
+    zone: us-west1-a
+    region: us-west1
